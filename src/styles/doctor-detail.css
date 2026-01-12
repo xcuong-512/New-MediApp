@@ -1,0 +1,345 @@
+.container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 22px 18px 42px;
+}
+
+.detail__top {
+    margin-bottom: 12px;
+}
+
+.back {
+    font-weight: 900;
+    color: #1d4ed8;
+}
+
+.detail__loading {
+    margin-top: 30px;
+    padding: 22px;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: white;
+}
+
+.detail__grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 14px;
+}
+
+.profile__card,
+.booking__card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.profile__header {
+    display: grid;
+    grid-template-columns: 76px 1fr;
+    gap: 14px;
+    align-items: center;
+}
+
+.profile__avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 18px;
+    object-fit: cover;
+    border: 1px solid #e5e7eb;
+}
+
+.profile__name {
+    font-weight: 1000;
+    font-size: 22px;
+    color: #0f172a;
+}
+
+.profile__sub {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dotSep {
+    color: #cbd5e1;
+}
+
+.badge {
+    display: inline-flex;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    background: #eef2ff;
+    color: #1d4ed8;
+    border: 1px solid #c7d2fe;
+}
+
+.muted {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.profile__rating {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stars {
+    display: flex;
+    gap: 2px;
+    line-height: 1;
+}
+
+.star {
+    color: #e2e8f0;
+    font-size: 14px;
+}
+
+.star--on {
+    color: #f59e0b;
+}
+
+.profile__stats {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.mini {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 12px;
+    background: #f8fafc;
+}
+
+.mini__label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 800;
+}
+
+.mini__value {
+    margin-top: 6px;
+    font-weight: 1000;
+    color: #0f172a;
+}
+
+.mini__value.ok {
+    color: #166534;
+}
+
+.mini__value.blue {
+    color: #1d4ed8;
+}
+
+.profile__bio {
+    margin-top: 14px;
+    border-top: 1px solid #eef2f7;
+    padding-top: 14px;
+}
+
+.profile__bio h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 1000;
+    color: #0f172a;
+}
+
+.profile__bio p {
+    margin: 0;
+    line-height: 1.6;
+    color: #334155;
+    font-weight: 600;
+}
+
+.booking__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.booking__title {
+    font-size: 16px;
+    font-weight: 1000;
+    color: #0f172a;
+}
+
+.booking__desc {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.price {
+    font-weight: 1000;
+    color: #0f172a;
+    background: #f1f5f9;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 8px 12px;
+}
+
+.formRow {
+    margin-top: 14px;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.input {
+    width: 100%;
+    margin-top: 8px;
+    border-radius: 14px;
+    border: 1px solid #d0d7e2;
+    padding: 10px 12px;
+    outline: none;
+    font-weight: 600;
+}
+
+.input:focus {
+    border-color: #2563eb;
+}
+
+.dateRow {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 10px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.btnPrimary {
+    border: none;
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: #2563eb;
+    color: white;
+    font-weight: 1000;
+    cursor: pointer;
+}
+
+.btnPrimary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.slotsWrap {
+    margin-top: 16px;
+}
+
+.slotsTitle {
+    font-weight: 1000;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.slotsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.slotBtn {
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    padding: 12px;
+    cursor: pointer;
+    display: grid;
+    gap: 6px;
+    transition: 0.15s ease;
+}
+
+.slotBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.10);
+}
+
+.slotTime {
+    font-weight: 1000;
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.slotMeta {
+    font-size: 12px;
+    color: #1d4ed8;
+    font-weight: 900;
+}
+
+.slotBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.slotSkeleton {
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    border: 1px solid #e5e7eb;
+}
+
+.empty {
+    grid-column: 1 / -1;
+    background: #f8fafc;
+    border: 1px dashed #e2e8f0;
+    color: #64748b;
+    border-radius: 16px;
+    padding: 14px;
+    font-weight: 800;
+}
+
+.booking__note {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+    font-weight: 700;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 0% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@media (max-width: 980px) {
+    .detail__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .slotsGrid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .slotsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dateRow {
+        grid-template-columns: 1fr;
+    }
+}

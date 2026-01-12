@@ -1,0 +1,54 @@
+.filters {
+    display: grid;
+    grid-template-columns: 1fr 220px 120px;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e6e6e6;
+    border-radius: 14px;
+    padding: 14px;
+    display: grid;
+    gap: 8px;
+}
+
+.card__title {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.card__meta {
+    font-size: 14px;
+    color: #333;
+}
+
+.slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filters {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
