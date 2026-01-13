@@ -5,7 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import DoctorsPage from "./pages/DoctorsPage";
 import DoctorDetailPage from "./pages/DoctorDetailPage";
 import MyAppointmentsPage from "./pages/MyAppointmentsPage";
-
+import Footer from "./components/Footer";
 import "./styles/app.css";
 
 export default function App() {
@@ -26,6 +26,8 @@ export default function App() {
           }
         />
       </Routes>
+
+      <Footer />
     </BrowserRouter>
   );
 }
