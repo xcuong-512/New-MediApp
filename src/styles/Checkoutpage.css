@@ -518,3 +518,30 @@
         display: none;
     }
 }
+
+.checkoutWrap,
+.checkoutWrap * {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.successCard h1 {
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.successCard p {
+    font-weight: 600;
+    line-height: 1.55;
+}
+
+.successSummary .row {
+    font-weight: 700;
+}
+
+.successSummary b {
+    font-weight: 900;
+}
+
+.successSummary span {
+    font-weight: 600;
+}
