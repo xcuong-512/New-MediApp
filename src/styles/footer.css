@@ -1,0 +1,155 @@
+.footer_main {
+    height: 280px;
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    background-color: #3b83f6;
+    color: white;
+
+
+}
+
+/* @media(min-width: 690px) {
+    .footer_main {
+        display: flex;
+        justify-content: space-around;
+        height: 400px;
+        width: 1000px;
+        gap: 50px;
+    }
+} */
+
+@media (max-width: 648px) {
+    .footer_main {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px 16px;
+        height: auto;
+    }
+}
+
+
+
+.opening_mediconnect,
+.services_footer,
+.social_footer {
+    margin-top: 10px;
+}
+
+.contact_footer {
+    display: flex;
+    flex-direction: column;
+}
+
+.high4_contact {
+    align-items: center;
+    line-height: 1.6;
+
+}
+
+.infor_text {
+    max-width: 300px;
+    /* Hoặc bất kỳ độ rộng nào bạn muốn */
+    overflow-wrap: break-word;
+    /* Tự động xuống dòng khi hết khung */
+    word-wrap: break-word;
+    line-height: 1.3;
+    font-weight: 500;
+}
+
+.social_media {
+    display: flex;
+    gap: 12px;
+    margin-left: 12px;
+}
+
+.social_footer {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 15px;
+}
+
+.social_footer h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.social_footer a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social_footer a:hover {
+    /* color: #7c3aed; */
+    transform: translateX(4px);
+}
+
+.social_footer svg {
+    font-size: 16px;
+
+    min-width: 18px;
+    transition: color 0.3s;
+}
+
+.social_footer a:hover svg {
+    color: white;
+}
+
+
+
+.iconer {
+    margin-top: 3px;
+}
+
+.services_footer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 15px;
+}
+
+.services_footer h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.services_footer ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.services_footer li {
+    margin-bottom: 15px;
+}
+
+.services_footer a {
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.services_footer a:hover {
+    padding-left: 6px;
+}
+
+.footer_bottom {
+    /* margin-top: 24px; */
+    /* padding-top: 16px; */
+    text-align: center;
+    background-color: #3b82f6;
+}
+
+.footer_bottom p {
+    margin: 0;
+    font-size: 14px;
+    color: white;
+}

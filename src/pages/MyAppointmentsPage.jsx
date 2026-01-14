@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { cancelAppointmentApi, myAppointmentsApi } from "../api/appointments.api";
 import { useToast } from "../context/ToastContext";
 import "../styles/appointments.css";
+import { useNavigate } from "react-router-dom";
 
 const badgeClass = (status) => {
     if (status === "pending") return "badge badge--pending";
@@ -11,10 +12,16 @@ const badgeClass = (status) => {
     return "badge";
 };
 
+
 export default function MyAppointmentsPage() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();
+    const navigate = useNavigate();
+
+    const handleClick = () => {
+        navigate('/checkout');
+    }
 
     const extractList = (payload) => {
         // payload có thể là:
@@ -117,14 +124,28 @@ export default function MyAppointmentsPage() {
 
                             <div className="apCard__actions">
                                 {a.status !== "completed" && a.status !== "cancelled" ? (
-                                    <button className="btnDanger" onClick={() => cancel(a.id)}>
-                                        Cancel
-                                    </button>
+                                    <>
+
+
+                                        <button onClick={handleClick} className="btnGreen">
+                                            Pay Now
+                                        </button>
+
+                                        <button className="btnDanger" onClick={() => cancel(a.id)}>
+                                            Cancel
+                                        </button>
+
+
+                                    </>
+
+
+
                                 ) : (
                                     <button className="btnDisabled" disabled>
                                         Not allowed
                                     </button>
                                 )}
+
                             </div>
                         </div>
                     ))}
