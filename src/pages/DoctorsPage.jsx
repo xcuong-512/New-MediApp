@@ -39,34 +39,31 @@ export default function DoctorsPage() {
 
     const activeSpecialtyName = useMemo(() => {
         if (!specialtyId) return "All specialties";
-        return specialties.find((s) => String(s.id) === String(specialtyId))?.name || "Specialty";
+        return (
+            specialties.find((s) => String(s.id) === String(specialtyId))?.name || "Specialty"
+        );
     }, [specialties, specialtyId]);
 
     const load = async () => {
         try {
             setLoading(true);
 
-            const [specRes, docRes] = await Promise.all([
+            // ✅ new api returns arrays directly
+            const [specList, doctorList] = await Promise.all([
                 getSpecialtiesApi(),
                 getDoctorsApi({
-                    q: q || undefined,
-                    specialty_id: specialtyId || undefined,
+                    q: q || "",
+                    specialty_id: specialtyId || "",
                 }),
             ]);
 
-            setSpecialties(specRes.data || []);
-
-            const raw = docRes.data;
-            const list = Array.isArray(raw)
-                ? raw
-                : Array.isArray(raw?.data)
-                    ? raw.data
-                    : [];
-
-            setDoctors(list);
+            setSpecialties(Array.isArray(specList) ? specList : []);
+            setDoctors(Array.isArray(doctorList) ? doctorList : []);
         } catch (e) {
             console.error(e);
             alert(e?.response?.data?.message || "Load doctors failed");
+            setSpecialties([]);
+            setDoctors([]);
         } finally {
             setLoading(false);
         }
@@ -226,13 +223,10 @@ export default function DoctorsPage() {
                             const rating = num(d.rating_avg, 0);
                             const reviews = num(d.total_reviews, 0);
 
-                            const avatar =
-                                d.user?.avatar_url ||
-                                "/doctor-default.png";
+                            const avatar = d.user?.avatar_url || "/doctor-default.png";
 
                             return (
                                 <div key={d.id} className="doctor">
-                                    {/* header */}
                                     <div className="doctor__top">
                                         <div className="doctor__left">
                                             <img className="avatarImg" src={avatar} alt="avatar" />
@@ -251,7 +245,6 @@ export default function DoctorsPage() {
                                         </div>
                                     </div>
 
-                                    {/* content */}
                                     <div className="doctor__body">
                                         <div className="tags">
                                             <span className="tag">{num(d.experience_years, 0)}+ yrs</span>
@@ -265,7 +258,6 @@ export default function DoctorsPage() {
                                         </div>
                                     </div>
 
-                                    {/* actions */}
                                     <div className="doctor__actions">
                                         <Link className="btn2 btn2--outline" to={`/doctors/${d.id}`}>
                                             View details

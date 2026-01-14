@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { cancelAppointmentApi, myAppointmentsApi } from "../api/appointments.api";
 import { useToast } from "../context/ToastContext";
 import "../styles/appointments.css";
-import { useNavigate } from "react-router-dom";
 
-const badgeClass = (status) => {
+function getPaidDeposits() {
+    try {
+        return JSON.parse(localStorage.getItem("paid_deposits") || "{}");
+    } catch {
+        return {};
+    }
+}
+
+const badgeClass = (status, depositPaid) => {
+    if (depositPaid) return "badge badge--confirmed";
+
     if (status === "pending") return "badge badge--pending";
     if (status === "confirmed") return "badge badge--confirmed";
     if (status === "completed") return "badge badge--completed";
@@ -12,47 +22,21 @@ const badgeClass = (status) => {
     return "badge";
 };
 
-
 export default function MyAppointmentsPage() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const { showToast } = useToast();
     const navigate = useNavigate();
 
-    const handleClick = () => {
-        navigate('/checkout');
-    }
-
-    const extractList = (payload) => {
-        // payload có thể là:
-        // 1) ApiResponse: { success, data }
-        // 2) paginator: { data: [...] }
-        // 3) array: [...]
-        const raw = payload?.data ?? payload;
-
-        if (Array.isArray(raw)) return raw; // direct list
-
-        // paginator dạng: { data: [...] }
-        if (raw && Array.isArray(raw.data)) return raw.data;
-
-        // ApiResponse -> data -> paginator -> data
-        if (raw?.data && Array.isArray(raw.data.data)) return raw.data.data;
-
-        return [];
-    };
-
     const load = async () => {
         try {
             setLoading(true);
 
             const res = await myAppointmentsApi();
+            const paginator = res?.data;
+            const list = paginator?.data || [];
 
-            console.log("MY APPOINTMENTS RES =", res);
-
-            const list = extractList(res);
             setItems(list);
-
-            if (list.length > 0) showToast(`Đã tải ${list.length} lịch hẹn`, "success", 2000);
         } catch (e) {
             console.error(e);
             showToast(e?.response?.data?.message || "Load appointments failed", "error", 3500);
@@ -74,6 +58,10 @@ export default function MyAppointmentsPage() {
         }
     };
 
+    const payNow = (appointmentId) => {
+        navigate(`/checkout/${appointmentId}`);
+    };
+
     useEffect(() => {
         load();
     }, []);
@@ -91,64 +79,92 @@ export default function MyAppointmentsPage() {
                 <div className="ap__empty">Bạn chưa có lịch khám nào.</div>
             ) : (
                 <div className="ap__grid">
-                    {items.map((a) => (
-                        <div className="apCard" key={a.id}>
-                            <div className="apCard__top">
-                                <div className="apCard__code">{a.appointment_code}</div>
-                                <span className={badgeClass(a.status)}>{a.status}</span>
-                            </div>
+                    {items.map((a) => {
+                        const doctorName = a.doctor_profile?.user?.name || "Doctor";
+                        const doctorAvatar = a.doctor_profile?.user?.avatar_url || "/doctor-default.png";
+                        const specialty = a.doctor_profile?.specialty?.name || "Specialty";
+                        const branchName = a.clinic_branch?.name || "Clinic branch";
 
-                            <div className="apCard__row">
-                                <div className="label">Date</div>
-                                <div className="value">{a.date}</div>
-                            </div>
+                        const deposits = getPaidDeposits();
+                        const depositPaid = deposits[String(a.id)] === true;
 
-                            <div className="apCard__row">
-                                <div className="label">Time</div>
-                                <div className="value">
-                                    {String(a.start_time).slice(0, 5)} - {String(a.end_time).slice(0, 5)}
+                        const canCancel = a.status !== "completed" && a.status !== "cancelled";
+                        const canPay = (a.status === "pending" || a.status === "confirmed") && !depositPaid;
+
+                        return (
+                            <div className="apCard apCard--rich" key={a.id}>
+                                <div className="apCard__top">
+                                    <div className="apCard__code">{a.appointment_code}</div>
+
+                                    <span className={badgeClass(a.status, depositPaid)}>
+                                        {depositPaid ? "deposit paid" : a.status}
+                                    </span>
                                 </div>
-                            </div>
 
-                            <div className="apCard__row">
-                                <div className="label">Type</div>
-                                <div className="value">{a.type}</div>
-                            </div>
-
-                            {a.symptom_note ? (
-                                <div className="apCard__note">
-                                    <div className="label">Note</div>
-                                    <div className="value">{a.symptom_note}</div>
+                                <div className="apDoc">
+                                    <img className="apDoc__avatar" src={doctorAvatar} alt="avatar" />
+                                    <div className="apDoc__info">
+                                        <div className="apDoc__name">{doctorName}</div>
+                                        <div className="apDoc__meta">
+                                            <span className="miniTag">{specialty}</span>
+                                            <span className="dotSep">•</span>
+                                            <span className="muted">{branchName}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            ) : null}
 
-                            <div className="apCard__actions">
-                                {a.status !== "completed" && a.status !== "cancelled" ? (
-                                    <>
+                                <div className="apCard__row">
+                                    <div className="label">Date</div>
+                                    <div className="value">{a.date}</div>
+                                </div>
 
+                                <div className="apCard__row">
+                                    <div className="label">Time</div>
+                                    <div className="value">
+                                        {String(a.start_time).slice(0, 5)} - {String(a.end_time).slice(0, 5)}
+                                    </div>
+                                </div>
 
-                                        <button onClick={handleClick} className="btnGreen">
-                                            Pay Now
+                                <div className="apCard__row">
+                                    <div className="label">Type</div>
+                                    <div className="value">{a.type}</div>
+                                </div>
+
+                                {a.symptom_note ? (
+                                    <div className="apCard__note">
+                                        <div className="label">Note</div>
+                                        <div className="value">{a.symptom_note}</div>
+                                    </div>
+                                ) : null}
+
+                                <div className="apCard__actions">
+                                    {depositPaid ? (
+                                        <button className="btnDisabled" disabled>
+                                            Deposit paid ✅
                                         </button>
+                                    ) : canPay ? (
+                                        <button className="btnPayNow" onClick={() => payNow(a.id)}>
+                                            Pay deposit
+                                        </button>
+                                    ) : (
+                                        <button className="btnDisabled" disabled>
+                                            Paid / N/A
+                                        </button>
+                                    )}
 
+                                    {canCancel ? (
                                         <button className="btnDanger" onClick={() => cancel(a.id)}>
                                             Cancel
                                         </button>
-
-
-                                    </>
-
-
-
-                                ) : (
-                                    <button className="btnDisabled" disabled>
-                                        Not allowed
-                                    </button>
-                                )}
-
+                                    ) : (
+                                        <button className="btnDisabled" disabled>
+                                            Not allowed
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

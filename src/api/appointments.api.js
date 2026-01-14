@@ -1,17 +1,12 @@
 import { api } from "./client";
 
-export const bookAppointmentApi = async ({ doctor_id, slot_id, symptom_note, type }) => {
-    const res = await api.post("/appointments", {
-        doctor_id,
-        slot_id,
-        symptom_note,
-        type,
-    });
+export const bookAppointmentApi = async (payload) => {
+    const res = await api.post("/appointments", payload);
     return res.data;
 };
 
-export const myAppointmentsApi = async () => {
-    const res = await api.get("/appointments/my");
+export const myAppointmentsApi = async (page = 1) => {
+    const res = await api.get("/appointments/my", { params: { page } });
     return res.data;
 };
 

@@ -17,7 +17,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<DoctorsPage />} />
         <Route path="/doctors/:id" element={<DoctorDetailPage />} />
-        <Route path="/checkout" element={<CheckoutPage />}></Route>
+        <Route path="/checkout/:id" element={<CheckoutPage />} />
         <Route
           path="/appointments"
           element={
