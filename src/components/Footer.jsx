@@ -16,7 +16,7 @@ function Footer() {
       <div className='footer_main'>
 
         <div className='opening_mediconnect'>
-          <h3>MediConnect</h3>
+          <h3>Introduction</h3>
           <p className='infor_text'>
             As the premier healthcare appointment platform in Vietnam, Mediconnect serves as a trusted bridge to the nation's leading medical experts. We are dedicated to crafting a seamless wellness journey, anchored by our compassionate 24/7 premium support
           </p>

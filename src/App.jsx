@@ -7,7 +7,7 @@ import DoctorDetailPage from "./pages/DoctorDetailPage";
 import MyAppointmentsPage from "./pages/MyAppointmentsPage";
 import Footer from "./components/Footer";
 import "./styles/app.css";
-
+import CheckoutPage from "./pages/CheckoutPage";
 export default function App() {
   return (
     <BrowserRouter>
@@ -17,6 +17,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<DoctorsPage />} />
         <Route path="/doctors/:id" element={<DoctorDetailPage />} />
+        <Route path="/checkout" element={<CheckoutPage />}></Route>
         <Route
           path="/appointments"
           element={
