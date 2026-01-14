@@ -11,8 +11,7 @@ function CheckoutPage() {
                         <div className='main_deptcription'>
                             <h1>Proceed to Payment.</h1>
                             <p>
-                                A simple and responsive payment checkout experience
-                                designed for modern applications.
+                                Step into a world of effortless payments. Mediconnect blends lightning-fast processing with world-class security, ensuring every transaction is a testament to trust
                             </p>
 
                         </div>
