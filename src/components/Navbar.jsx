@@ -29,9 +29,9 @@ export default function Navbar() {
                         Home
                     </NavLink>
 
-                    <a href="#services" className="navitem">
+                    <NavLink to="/services" className="navitem">
                         Services
-                    </a>
+                    </NavLink>
 
                     <NavLink to="/appointments" className={({ isActive }) => (isActive ? "navitem navitem--active" : "navitem")}>
                         Appointments

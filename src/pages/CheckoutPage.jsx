@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import "../styles/Checkoutpage.css";
 import { myAppointmentsApi } from "../api/appointments.api";
@@ -15,128 +15,55 @@ function maskCardNumber(v) {
     return parts.join(" ");
 }
 
-function maskMMYY(v) {
-    const digits = (v || "").replace(/\D/g, "").slice(0, 4);
-    if (digits.length <= 2) return digits;
-    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-}
-
-function isValidCardNumber(v) {
-    const digits = (v || "").replace(/\D/g, "");
-    return digits.length === 16;
-}
-function isValidMMYY(v) {
-    const digits = (v || "").replace(/\D/g, "");
-    if (digits.length !== 4) return false;
-    const mm = Number(digits.slice(0, 2));
-    const yy = Number(digits.slice(2, 4));
-    return mm >= 1 && mm <= 12 && yy >= 0;
-}
-function isValidCVV(v) {
-    const digits = (v || "").replace(/\D/g, "");
-    return digits.length === 3;
-}
-
-function getPaidDeposits() {
-    try {
-        return JSON.parse(localStorage.getItem("paid_deposits") || "{}");
-    } catch {
-        return {};
-    }
-}
-
 export default function CheckoutPage() {
-    const nav = useNavigate();
-    const { id } = useParams(); // appointment id
+    const { id } = useParams();
+    const navigate = useNavigate();
 
-    const [appointment, setAppointment] = useState(null);
+    const [apptInfo, setApptInfo] = useState(null);
     const [loadingAppt, setLoadingAppt] = useState(true);
 
-    const [method, setMethod] = useState("card"); // card | bank | transfer
-    const [saveCard, setSaveCard] = useState(true);
-
+    const [method, setMethod] = useState("card");
     const [cardName, setCardName] = useState("");
     const [cardNumber, setCardNumber] = useState("");
-    const [cardExp, setCardExp] = useState("");
-    const [cardCVV, setCardCVV] = useState("");
+    const [expiry, setExpiry] = useState("");
+    const [cvv, setCvv] = useState("");
 
-    const [bankCode, setBankCode] = useState("VCB");
     const [loadingPay, setLoadingPay] = useState(false);
-
-    // ✅ success flow
     const [paidSuccess, setPaidSuccess] = useState(false);
     const [countdown, setCountdown] = useState(5);
 
-    // ✅ Load appointment REAL from API
-    useEffect(() => {
-        const load = async () => {
-            try {
-                setLoadingAppt(true);
-
-                const res = await myAppointmentsApi();
-                const paginator = res?.data;
-                const list = paginator?.data || [];
-
-                const found = list.find((a) => String(a.id) === String(id));
-                setAppointment(found || null);
-            } catch (e) {
-                console.error(e);
-                setAppointment(null);
-            } finally {
-                setLoadingAppt(false);
-            }
-        };
-
-        load();
-    }, [id]);
-
-    // ✅ Extract info from appointment
-    const apptInfo = useMemo(() => {
-        if (!appointment) return null;
-
-        const doctorName = appointment.doctor_profile?.user?.name || "Doctor";
-        const specialty = appointment.doctor_profile?.specialty?.name || "Specialty";
-        const branch = appointment.clinic_branch?.name || "Clinic branch";
-
-        const time =
-            `${String(appointment.start_time).slice(0, 5)} - ${String(appointment.end_time).slice(0, 5)}`;
-
-        return {
-            id: appointment.id,
-            appointment_code: appointment.appointment_code,
-            doctorName,
-            specialty,
-            date: appointment.date,
-            time,
-            branch,
-            status: appointment.status,
-        };
-    }, [appointment]);
-
-    // ✅ Total fee
-    const totalFee = useMemo(() => {
-        const fee = appointment?.doctor_profile?.consultation_fee;
-        return Number(fee || 0);
-    }, [appointment]);
-
-    // ✅ Deposit 10%
-    const depositRate = 0.1;
-    const depositAmount = useMemo(() => Math.round(totalFee * depositRate), [totalFee]);
-    const remainingAmount = useMemo(() => totalFee - depositAmount, [totalFee, depositAmount]);
-
-    const depositPaid = useMemo(() => {
-        if (!apptInfo?.id) return false;
-        const paid = getPaidDeposits();
-        return paid[String(apptInfo.id)] === true;
-    }, [apptInfo?.id]);
+    const depositPercent = 0.2; // ✅ 20%
 
     const isCardFormValid =
         cardName.trim().length >= 2 &&
-        isValidCardNumber(cardNumber) &&
-        isValidMMYY(cardExp) &&
-        isValidCVV(cardCVV);
+        cardNumber.replace(/\D/g, "").length >= 16 &&
+        expiry.trim().length >= 4 &&
+        cvv.trim().length >= 3;
 
-    // ✅ redirect after success
+    const fetchAppt = async () => {
+        try {
+            setLoadingAppt(true);
+
+            const res = await myAppointmentsApi();
+            const list = res?.data?.data?.data || res?.data?.data || [];
+            const appt = (Array.isArray(list) ? list : []).find(
+                (x) => String(x.id) === String(id)
+            );
+
+            setApptInfo(appt || null);
+        } catch (e) {
+            console.error("fetch appointment error:", e);
+            setApptInfo(null);
+        } finally {
+            setLoadingAppt(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAppt();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
     useEffect(() => {
         if (!paidSuccess) return;
 
@@ -146,58 +73,98 @@ export default function CheckoutPage() {
             setCountdown((c) => c - 1);
         }, 1000);
 
-        const navTimer = setTimeout(() => {
-            nav("/appointments");
+        const to = setTimeout(() => {
+            navigate("/appointments");
         }, 5000);
 
         return () => {
             clearInterval(t);
-            clearTimeout(navTimer);
+            clearTimeout(to);
         };
-    }, [paidSuccess]);
+    }, [paidSuccess, navigate]);
+
+    // ✅ support both old/new backend shapes
+    const doctorName =
+        apptInfo?.doctor?.user?.name ||
+        apptInfo?.doctor_profile?.user?.name ||
+        apptInfo?.doctorProfile?.user?.name ||
+        "Doctor";
+
+    const specialty =
+        apptInfo?.doctor?.specialty?.name ||
+        apptInfo?.doctor_profile?.specialty?.name ||
+        apptInfo?.doctorProfile?.specialty?.name ||
+        "Specialty";
+
+    const clinic =
+        apptInfo?.clinic_branch?.name ||
+        apptInfo?.clinicBranch?.name ||
+        "Clinic";
+
+    const totalFee = Number(
+        apptInfo?.doctor?.consultation_fee ||
+        apptInfo?.doctor_profile?.consultation_fee ||
+        apptInfo?.doctorProfile?.consultation_fee ||
+        apptInfo?.consultation_fee ||
+        0
+    );
+
+    const deposit = Math.round(totalFee * depositPercent);
+    const remaining = Math.max(totalFee - deposit, 0);
 
     const handlePay = async () => {
         try {
-            if (depositPaid) return;
+            if (!apptInfo?.id) {
+                alert("Appointment not found. Please reload page.");
+                return;
+            }
+
             if (method === "card" && !isCardFormValid) return;
 
             setLoadingPay(true);
 
-            // DEMO processing
+            // ✅ demo processing delay
             await new Promise((r) => setTimeout(r, 900));
 
-            // ✅ mark deposit paid in localStorage
-            const paid = getPaidDeposits();
-            paid[String(apptInfo.id)] = true;
-            localStorage.setItem("paid_deposits", JSON.stringify(paid));
+            // ✅ mark deposit paid (demo) in localStorage
+            const key = "paid_deposits";
+            let paid = [];
 
-            // ✅ show success screen
+            try {
+                const raw = localStorage.getItem(key);
+                const parsed = raw ? JSON.parse(raw) : [];
+                paid = Array.isArray(parsed) ? parsed : [];
+            } catch {
+                paid = [];
+            }
+
+            const apptId = String(apptInfo.id);
+
+            if (!paid.includes(apptId)) {
+                paid.push(apptId);
+                localStorage.setItem(key, JSON.stringify(paid));
+            }
+
             setPaidSuccess(true);
+        } catch (err) {
+            console.error("Demo payment error:", err);
+            alert("Payment demo failed. Please try again.");
         } finally {
             setLoadingPay(false);
         }
     };
 
-    // UI states
+    // loading appointment
     if (loadingAppt) {
         return (
             <div className="checkoutWrap">
-                <div className="checkoutHeader">
-                    <div className="checkoutBrand">
-                        <div className="logoCircle">MC</div>
-                        <div>
-                            <div className="brandName">MediConnect</div>
-                            <div className="brandSub">Secure checkout</div>
-                        </div>
-                    </div>
-                </div>
-
                 <div className="payBox">Loading appointment...</div>
             </div>
         );
     }
 
-    if (!appointment || !apptInfo) {
+    // missing appointment
+    if (!apptInfo) {
         return (
             <div className="checkoutWrap">
                 <div className="payBox">
@@ -207,328 +174,233 @@ export default function CheckoutPage() {
         );
     }
 
-    // ✅ success screen professional
+    // ✅ success screen
     if (paidSuccess) {
         return (
             <div className="checkoutWrap">
-                <div className="successCard">
-                    <div className="successIcon">✓</div>
+                <div className="paySuccessCard">
+                    <div className="paySuccessIcon">✓</div>
+                    <div className="paySuccessTitle">Payment successful</div>
+                    <div className="paySuccessSub">
+                        Bạn đã đặt cọc thành công <b>{formatMoney(deposit)}</b> để giữ lịch.
+                    </div>
 
-                    <h1>Deposit payment successful</h1>
-                    <p>
-                        Bạn đã đặt cọc thành công <b>{formatMoney(depositAmount)}</b> để giữ chỗ.
-                    </p>
-
-                    <div className="successSummary">
+                    <div className="paySuccessTable">
                         <div className="row">
-                            <span>Appointment</span>
-                            <b>{apptInfo.appointment_code || `#${apptInfo.id}`}</b>
+                            <div className="k">Doctor</div>
+                            <div className="v">{doctorName}</div>
                         </div>
-
                         <div className="row">
-                            <span>Total fee</span>
-                            <b>{formatMoney(totalFee)}</b>
+                            <div className="k">Appointment</div>
+                            <div className="v">{apptInfo.appointment_code}</div>
                         </div>
-
                         <div className="row">
-                            <span>Deposit (10%)</span>
-                            <b>{formatMoney(depositAmount)}</b>
+                            <div className="k">Deposit (20%)</div>
+                            <div className="v">{formatMoney(deposit)}</div>
                         </div>
-
                         <div className="row">
-                            <span>Remaining</span>
-                            <b>{formatMoney(remainingAmount)}</b>
+                            <div className="k">Remaining</div>
+                            <div className="v">{formatMoney(remaining)}</div>
                         </div>
                     </div>
 
-                    <div className="successActions">
-                        <button className="btnPrimary" onClick={() => nav("/appointments")}>
-                            Back to My Appointments
-                        </button>
+                    <button className="btnBackAppt" onClick={() => navigate("/appointments")}>
+                        Back to My Appointments
+                    </button>
 
-                        <div className="muted">
-                            Auto redirect in <b>{countdown}</b>s...
-                        </div>
+                    <div className="payAutoText">
+                        Auto redirect in {Math.max(countdown, 0)}s...
                     </div>
                 </div>
             </div>
         );
     }
 
+    // checkout page
     return (
         <div className="checkoutWrap">
             <div className="checkoutHeader">
-                <div className="checkoutBrand">
-                    <div className="logoCircle">MC</div>
+                <div className="brandLeft">
+                    <div className="brandLogo">MC</div>
                     <div>
                         <div className="brandName">MediConnect</div>
                         <div className="brandSub">Secure checkout</div>
+                        <div className="sslText">256-bit SSL Secure</div>
                     </div>
                 </div>
 
-                <div className="secureTag">
-                    <span className="lockDot" /> 256-bit SSL Secure
+                <div className="secureBadge">
+                    <span className="dotGreen" />
+                    <span>256-bit SSL Secure</span>
                 </div>
+            </div>
+
+            <div className="checkoutTitle">Proceed to Payment</div>
+            <div className="checkoutSub">
+                Đây là thanh toán <b>đặt cọc 20%</b> để giữ chỗ, tránh tình trạng spam lịch.
             </div>
 
             <div className="checkoutGrid">
                 {/* LEFT */}
-                <section className="checkoutCard">
-                    <div className="sectionTitle">
-                        <h1>Proceed to Payment</h1>
-                        <p>
-                            Đây là thanh toán <b>đặt cọc 10%</b> để giữ chỗ, tránh tình trạng spam lịch.
-                        </p>
+                <div className="payCard">
+                    <div className="payCardTop">
+                        <div className="payCardTitle">Deposit Payment</div>
+                        <div className="pillAmount">{formatMoney(deposit)}</div>
                     </div>
 
-                    <div className="payBox">
-                        <div className="payBoxHead">
-                            <h2>Deposit Payment</h2>
-                            <div className="payAmount">{formatMoney(depositAmount)}</div>
+                    <div className="feeBox">
+                        <div className="feeRow">
+                            <span>Total fee</span>
+                            <b>{formatMoney(totalFee)}</b>
                         </div>
-
-                        <hr className="separator" />
-
-                        <div className="depositBreakdown">
-                            <div className="drow">
-                                <span>Total fee</span>
-                                <b>{formatMoney(totalFee)}</b>
-                            </div>
-                            <div className="drow">
-                                <span>Deposit (10%)</span>
-                                <b>{formatMoney(depositAmount)}</b>
-                            </div>
-                            <div className="drow">
-                                <span>Remaining</span>
-                                <b>{formatMoney(remainingAmount)}</b>
-                            </div>
+                        <div className="feeRow">
+                            <span>Deposit (20%)</span>
+                            <b>{formatMoney(deposit)}</b>
                         </div>
-
-                        <div className="payment_methods">
-                            <label className={`radio_item ${method === "card" ? "active" : ""}`}>
-                                <input
-                                    className="payment_input"
-                                    type="radio"
-                                    name="pay"
-                                    checked={method === "card"}
-                                    onChange={() => setMethod("card")}
-                                />
-                                <span>Card</span>
-                            </label>
-
-                            <label className={`radio_item ${method === "bank" ? "active" : ""}`}>
-                                <input
-                                    className="payment_input"
-                                    type="radio"
-                                    name="pay"
-                                    checked={method === "bank"}
-                                    onChange={() => setMethod("bank")}
-                                />
-                                <span>Bank</span>
-                            </label>
-
-                            <label className={`radio_item ${method === "transfer" ? "active" : ""}`}>
-                                <input
-                                    className="payment_input"
-                                    type="radio"
-                                    name="pay"
-                                    checked={method === "transfer"}
-                                    onChange={() => setMethod("transfer")}
-                                />
-                                <span>Transfer</span>
-                            </label>
+                        <div className="feeRow">
+                            <span>Remaining</span>
+                            <b>{formatMoney(remaining)}</b>
                         </div>
+                    </div>
 
-                        {method === "card" && (
-                            <div className="payForm">
-                                <div className="field">
-                                    <label>Cardholder name</label>
-                                    <input
-                                        value={cardName}
-                                        onChange={(e) => setCardName(e.target.value)}
-                                        placeholder="VD: Nguyen Van A"
-                                        autoComplete="cc-name"
-                                    />
-                                </div>
-
-                                <div className="field">
-                                    <label>Card number</label>
-                                    <input
-                                        value={cardNumber}
-                                        onChange={(e) => setCardNumber(maskCardNumber(e.target.value))}
-                                        placeholder="1234 5678 9012 3456"
-                                        autoComplete="cc-number"
-                                        inputMode="numeric"
-                                    />
-                                </div>
-
-                                <div className="payment_row">
-                                    <div className="field">
-                                        <label>Expiry</label>
-                                        <input
-                                            value={cardExp}
-                                            onChange={(e) => setCardExp(maskMMYY(e.target.value))}
-                                            placeholder="MM/YY"
-                                            autoComplete="cc-exp"
-                                            inputMode="numeric"
-                                        />
-                                    </div>
-
-                                    <div className="field">
-                                        <label>CVV</label>
-                                        <input
-                                            value={cardCVV}
-                                            onChange={(e) => setCardCVV(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                                            placeholder="123"
-                                            autoComplete="cc-csc"
-                                            inputMode="numeric"
-                                        />
-                                    </div>
-                                </div>
-
-                                <label className="check_box">
-                                    <input
-                                        type="checkbox"
-                                        checked={saveCard}
-                                        onChange={(e) => setSaveCard(e.target.checked)}
-                                    />
-                                    <span>Save card details for next time</span>
-                                </label>
-
-                                {!isCardFormValid ? (
-                                    <div className="hintError">* Please enter valid card information.</div>
-                                ) : (
-                                    <div className="hintOk">Looks good ✅</div>
-                                )}
-                            </div>
-                        )}
-
-                        {method === "bank" && (
-                            <div className="payForm">
-                                <div className="field">
-                                    <label>Select bank</label>
-                                    <select value={bankCode} onChange={(e) => setBankCode(e.target.value)}>
-                                        <option value="VCB">Vietcombank</option>
-                                        <option value="TCB">Techcombank</option>
-                                        <option value="BIDV">BIDV</option>
-                                        <option value="MB">MB Bank</option>
-                                        <option value="ACB">ACB</option>
-                                        <option value="VPB">VPBank</option>
-                                    </select>
-                                </div>
-
-                                <div className="bankHint">
-                                    You will be redirected to your bank gateway to complete payment.
-                                </div>
-                            </div>
-                        )}
-
-                        {method === "transfer" && (
-                            <div className="payForm">
-                                <div className="transferBox">
-                                    <div className="transferTitle">Bank transfer information</div>
-
-                                    <div className="transferRow">
-                                        <span>Account name</span>
-                                        <b>MediConnect Co., Ltd</b>
-                                    </div>
-                                    <div className="transferRow">
-                                        <span>Account number</span>
-                                        <b>0123 456 789</b>
-                                    </div>
-                                    <div className="transferRow">
-                                        <span>Bank</span>
-                                        <b>Vietcombank</b>
-                                    </div>
-                                    <div className="transferRow">
-                                        <span>Transfer content</span>
-                                        <b>MC-DEPOSIT-{apptInfo.id}</b>
-                                    </div>
-
-                                    <div className="transferNote">
-                                        * Sau khi chuyển khoản, hệ thống sẽ xác nhận.
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
+                    <div className="methodTabs">
                         <button
-                            className="btn_pay"
-                            disabled={
-                                loadingPay ||
-                                depositPaid ||
-                                (method === "card" && !isCardFormValid) ||
-                                depositAmount <= 0
-                            }
-                            onClick={handlePay}
+                            className={method === "card" ? "tab active" : "tab"}
+                            onClick={() => setMethod("card")}
+                            type="button"
                         >
-                            {depositPaid
-                                ? "Deposit already paid ✅"
-                                : loadingPay
-                                    ? "Processing..."
-                                    : `Pay deposit ${formatMoney(depositAmount)}`}
+                            Card
                         </button>
-
-                        <div className="text_span">
-                            * Đây là tính năng demo: thanh toán đặt cọc để giữ chỗ, chống spam lịch.
-                        </div>
+                        <button
+                            className={method === "bank" ? "tab active" : "tab"}
+                            onClick={() => setMethod("bank")}
+                            type="button"
+                        >
+                            Bank
+                        </button>
+                        <button
+                            className={method === "transfer" ? "tab active" : "tab"}
+                            onClick={() => setMethod("transfer")}
+                            type="button"
+                        >
+                            Transfer
+                        </button>
                     </div>
-                </section>
 
-                {/* RIGHT: Summary */}
-                <aside className="checkoutSummary">
-                    <div className="summaryCard">
-                        <div className="summaryTitle">Appointment summary</div>
+                    {method === "card" ? (
+                        <div className="form">
+                            <label>Cardholder name</label>
+                            <input
+                                value={cardName}
+                                onChange={(e) => setCardName(e.target.value)}
+                                placeholder="VD: Nguyen Van A"
+                            />
 
-                        <div className="summaryItem">
-                            <span>Appointment ID</span>
-                            <b>#{apptInfo.id}</b>
+                            <label>Card number</label>
+                            <input
+                                value={cardNumber}
+                                onChange={(e) => setCardNumber(maskCardNumber(e.target.value))}
+                                placeholder="1234 5678 9012 3456"
+                            />
+
+                            <div className="formRow">
+                                <div>
+                                    <label>Expiry</label>
+                                    <input
+                                        value={expiry}
+                                        onChange={(e) => setExpiry(e.target.value)}
+                                        placeholder="MM/YY"
+                                    />
+                                </div>
+                                <div>
+                                    <label>CVV</label>
+                                    <input
+                                        value={cvv}
+                                        onChange={(e) => setCvv(e.target.value)}
+                                        placeholder="123"
+                                    />
+                                </div>
+                            </div>
+
+                            {!isCardFormValid && (
+                                <div className="hintRed">* Please enter valid card info.</div>
+                            )}
                         </div>
-
-                        <div className="summaryItem">
-                            <span>Code</span>
-                            <b>{apptInfo.appointment_code || "-"}</b>
+                    ) : (
+                        <div className="hintInfo">
+                            Demo method: <b>{method}</b>
                         </div>
+                    )}
 
-                        <div className="summaryItem">
-                            <span>Doctor</span>
-                            <b>{apptInfo.doctorName}</b>
-                        </div>
+                    <button
+                        className="btnPayDeposit"
+                        onClick={handlePay}
+                        disabled={
+                            loadingPay ||
+                            !apptInfo?.id ||
+                            (method === "card" && !isCardFormValid)
+                        }
+                    >
+                        {loadingPay
+                            ? "Processing..."
+                            : `Pay deposit ${formatMoney(deposit)}`}
+                    </button>
 
-                        <div className="summaryItem">
-                            <span>Specialty</span>
-                            <b>{apptInfo.specialty}</b>
-                        </div>
-
-                        <div className="summaryItem">
-                            <span>Date</span>
-                            <b>{apptInfo.date}</b>
-                        </div>
-
-                        <div className="summaryItem">
-                            <span>Time</span>
-                            <b>{apptInfo.time}</b>
-                        </div>
-
-                        <div className="summaryItem">
-                            <span>Clinic</span>
-                            <b>{apptInfo.branch}</b>
-                        </div>
-
-                        <hr className="separator soft" />
-
-                        <div className="summaryPrice">
-                            <span>Deposit now</span>
-                            <b>{formatMoney(depositAmount)}</b>
-                        </div>
-
-                        <div className="summarySecure">
-                            ✅ Deposit giữ slot <br />
-                            ✅ Chống spam lịch <br />
-                            ✅ Support 24/7
-                        </div>
+                    <div className="demoNote">
+                        * Đây là demo thanh toán (không ghi vào database).
                     </div>
-                </aside>
+                </div>
+
+                {/* RIGHT */}
+                <div className="summaryCard">
+                    <div className="summaryTitle">Appointment summary</div>
+
+                    <div className="sumRow">
+                        <span>Code</span>
+                        <b>{apptInfo.appointment_code}</b>
+                    </div>
+
+                    <div className="sumRow">
+                        <span>Doctor</span>
+                        <b>{doctorName}</b>
+                    </div>
+
+                    <div className="sumRow">
+                        <span>Specialty</span>
+                        <b>{specialty}</b>
+                    </div>
+
+                    <div className="sumRow">
+                        <span>Date</span>
+                        <b>{apptInfo.date}</b>
+                    </div>
+
+                    <div className="sumRow">
+                        <span>Time</span>
+                        <b>
+                            {String(apptInfo.start_time).slice(0, 5)} -{" "}
+                            {String(apptInfo.end_time).slice(0, 5)}
+                        </b>
+                    </div>
+
+                    <div className="sumRow">
+                        <span>Clinic</span>
+                        <b>{clinic}</b>
+                    </div>
+
+                    <hr className="sumHr" />
+
+                    <div className="sumPay">
+                        <span>Deposit now</span>
+                        <b>{formatMoney(deposit)}</b>
+                    </div>
+
+                    <ul className="sumList">
+                        <li>✅ Deposit giữ slot</li>
+                        <li>✅ Chống spam lịch</li>
+                        <li>✅ Support 24/7</li>
+                    </ul>
+                </div>
             </div>
         </div>
     );

@@ -1,164 +1,197 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { cancelAppointmentApi, myAppointmentsApi } from "../api/appointments.api";
-import { useToast } from "../context/ToastContext";
-import "../styles/appointments.css";
-
-function getPaidDeposits() {
-    try {
-        return JSON.parse(localStorage.getItem("paid_deposits") || "{}");
-    } catch {
-        return {};
-    }
-}
-
-const badgeClass = (status, depositPaid) => {
-    if (depositPaid) return "badge badge--confirmed";
-
-    if (status === "pending") return "badge badge--pending";
-    if (status === "confirmed") return "badge badge--confirmed";
-    if (status === "completed") return "badge badge--completed";
-    if (status === "cancelled") return "badge badge--cancelled";
-    return "badge";
-};
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+    myAppointmentsApi,
+    cancelAppointmentApi,
+} from "../api/appointments.api";
 
 export default function MyAppointmentsPage() {
-    const [items, setItems] = useState([]);
+    const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { showToast } = useToast();
-    const navigate = useNavigate();
+    const [cancelLoadingId, setCancelLoadingId] = useState(null);
 
-    const load = async () => {
+    const paidDepositIds = useMemo(() => {
+        try {
+            const raw = localStorage.getItem("paid_deposits");
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }, []);
+
+    const fetchData = async () => {
         try {
             setLoading(true);
-
             const res = await myAppointmentsApi();
-            const paginator = res?.data;
-            const list = paginator?.data || [];
-
-            setItems(list);
+            const list = res?.data?.data || res?.data?.data?.data || [];
+            setAppointments(Array.isArray(list) ? list : []);
         } catch (e) {
             console.error(e);
-            showToast(e?.response?.data?.message || "Load appointments failed", "error", 3500);
+            setAppointments([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const cancel = async (id) => {
-        const ok = confirm("Bạn chắc chắn muốn hủy lịch hẹn?");
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const getDoctorName = (a) =>
+        a?.doctor?.user?.name ||
+        a?.doctor_profile?.user?.name ||
+        a?.doctorProfile?.user?.name ||
+        "Doctor";
+
+    const getFee = (a) =>
+        Number(
+            a?.doctor?.consultation_fee ||
+            a?.doctor_profile?.consultation_fee ||
+            a?.doctorProfile?.consultation_fee ||
+            0
+        );
+
+    const formatMoney = (n) => Number(n || 0).toLocaleString("vi-VN") + " ₫";
+
+    const canCancel = (status) => {
+        return !["completed", "cancelled"].includes(String(status || ""));
+    };
+
+    const handleCancel = async (id) => {
+        const ok = confirm("Bạn chắc chắn muốn hủy lịch khám này?");
         if (!ok) return;
 
         try {
+            setCancelLoadingId(id);
             await cancelAppointmentApi(id);
-            showToast("Đã hủy lịch", "success", 2500);
-            await load();
+            await fetchData();
         } catch (e) {
-            showToast(e?.response?.data?.message || "Cancel failed", "error", 3500);
+            console.error(e);
+            alert("Cancel failed");
+        } finally {
+            setCancelLoadingId(null);
         }
     };
 
-    const payNow = (appointmentId) => {
-        navigate(`/checkout/${appointmentId}`);
-    };
-
-    useEffect(() => {
-        load();
-    }, []);
+    if (loading) return <div style={{ padding: 24 }}>Loading...</div>;
 
     return (
-        <div className="ap container">
-            <div className="ap__head">
-                <h2>My Appointments</h2>
-                <p>Danh sách lịch khám của bạn</p>
-            </div>
+        <div style={{ padding: 24 }}>
+            <h2 style={{ marginBottom: 16 }}>My Appointments</h2>
 
-            {loading ? (
-                <div className="ap__loading">Loading...</div>
-            ) : items.length === 0 ? (
-                <div className="ap__empty">Bạn chưa có lịch khám nào.</div>
+            {appointments.length === 0 ? (
+                <p>Bạn chưa có lịch khám nào.</p>
             ) : (
-                <div className="ap__grid">
-                    {items.map((a) => {
-                        const doctorName = a.doctor_profile?.user?.name || "Doctor";
-                        const doctorAvatar = a.doctor_profile?.user?.avatar_url || "/doctor-default.png";
-                        const specialty = a.doctor_profile?.specialty?.name || "Specialty";
-                        const branchName = a.clinic_branch?.name || "Clinic branch";
+                <div style={{ display: "grid", gap: 14 }}>
+                    {appointments.map((a) => {
+                        const isDepositPaidDemo = paidDepositIds.includes(String(a.id));
 
-                        const deposits = getPaidDeposits();
-                        const depositPaid = deposits[String(a.id)] === true;
+                        const uiStatus = isDepositPaidDemo ? "deposit_paid" : a.status;
 
-                        const canCancel = a.status !== "completed" && a.status !== "cancelled";
-                        const canPay = (a.status === "pending" || a.status === "confirmed") && !depositPaid;
+                        const showPayBtn = uiStatus === "pending";
+                        const showCancelBtn = canCancel(a.status);
 
                         return (
-                            <div className="apCard apCard--rich" key={a.id}>
-                                <div className="apCard__top">
-                                    <div className="apCard__code">{a.appointment_code}</div>
+                            <div
+                                key={a.id}
+                                style={{
+                                    border: "1px solid #e7e7e7",
+                                    borderRadius: 14,
+                                    padding: 14,
+                                    background: "#fff",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    <b>{getDoctorName(a)}</b>
 
-                                    <span className={badgeClass(a.status, depositPaid)}>
-                                        {depositPaid ? "deposit paid" : a.status}
+                                    <span
+                                        style={{
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            padding: "6px 10px",
+                                            borderRadius: 999,
+                                            background:
+                                                uiStatus === "deposit_paid" ? "#e7fff1" : "#fff7e6",
+                                            color: uiStatus === "deposit_paid" ? "#0a7a43" : "#b05b00",
+                                        }}
+                                    >
+                                        {uiStatus}
                                     </span>
                                 </div>
 
-                                <div className="apDoc">
-                                    <img className="apDoc__avatar" src={doctorAvatar} alt="avatar" />
-                                    <div className="apDoc__info">
-                                        <div className="apDoc__name">{doctorName}</div>
-                                        <div className="apDoc__meta">
-                                            <span className="miniTag">{specialty}</span>
-                                            <span className="dotSep">•</span>
-                                            <span className="muted">{branchName}</span>
-                                        </div>
-                                    </div>
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span>{a.date}</span>
+                                    <span>
+                                        {String(a.start_time).slice(0, 5)} -{" "}
+                                        {String(a.end_time).slice(0, 5)}
+                                    </span>
                                 </div>
 
-                                <div className="apCard__row">
-                                    <div className="label">Date</div>
-                                    <div className="value">{a.date}</div>
+                                <div
+                                    style={{
+                                        marginTop: 10,
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                    }}
+                                >
+                                    <span>Fee</span>
+                                    <b>{formatMoney(getFee(a))}</b>
                                 </div>
 
-                                <div className="apCard__row">
-                                    <div className="label">Time</div>
-                                    <div className="value">
-                                        {String(a.start_time).slice(0, 5)} - {String(a.end_time).slice(0, 5)}
-                                    </div>
-                                </div>
-
-                                <div className="apCard__row">
-                                    <div className="label">Type</div>
-                                    <div className="value">{a.type}</div>
-                                </div>
-
-                                {a.symptom_note ? (
-                                    <div className="apCard__note">
-                                        <div className="label">Note</div>
-                                        <div className="value">{a.symptom_note}</div>
-                                    </div>
-                                ) : null}
-
-                                <div className="apCard__actions">
-                                    {depositPaid ? (
-                                        <button className="btnDisabled" disabled>
-                                            Deposit paid ✅
-                                        </button>
-                                    ) : canPay ? (
-                                        <button className="btnPayNow" onClick={() => payNow(a.id)}>
+                                <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
+                                    {showPayBtn ? (
+                                        <Link
+                                            to={`/checkout/${a.id}`}
+                                            style={{
+                                                textDecoration: "none",
+                                                padding: "10px 14px",
+                                                borderRadius: 12,
+                                                fontWeight: 700,
+                                                color: "#fff",
+                                                background: "#111827",
+                                            }}
+                                        >
                                             Pay deposit
-                                        </button>
+                                        </Link>
                                     ) : (
-                                        <button className="btnDisabled" disabled>
-                                            Paid / N/A
+                                        <button
+                                            disabled
+                                            style={{
+                                                padding: "10px 14px",
+                                                borderRadius: 12,
+                                                fontWeight: 700,
+                                                background: "#f0fff6",
+                                                border: "1px solid #b8f5d0",
+                                                color: "#0a7a43",
+                                            }}
+                                        >
+                                            Deposit paid ✅
                                         </button>
                                     )}
 
-                                    {canCancel ? (
-                                        <button className="btnDanger" onClick={() => cancel(a.id)}>
-                                            Cancel
-                                        </button>
-                                    ) : (
-                                        <button className="btnDisabled" disabled>
-                                            Not allowed
+                                    {showCancelBtn && (
+                                        <button
+                                            onClick={() => handleCancel(a.id)}
+                                            disabled={cancelLoadingId === a.id}
+                                            style={{
+                                                padding: "10px 14px",
+                                                borderRadius: 12,
+                                                fontWeight: 700,
+                                                background: "#fff",
+                                                border: "1px solid #ef4444",
+                                                color: "#ef4444",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            {cancelLoadingId === a.id ? "Cancelling..." : "Cancel"}
                                         </button>
                                     )}
                                 </div>
