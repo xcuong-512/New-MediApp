@@ -5,7 +5,7 @@ import {
     getDoctorSlotsApi,
     getNextAvailableDateApi,
 } from "../api/doctors.api";
-import { bookAppointmentApi } from "../api/appointments.api";
+import { createAppointmentApi } from "../api/appointments.api";
 import { useToast } from "../context/ToastContext";
 import ConfirmModal from "../components/ConfirmModal";
 import "../styles/doctor-detail.css";
@@ -55,15 +55,11 @@ export default function DoctorDetailPage() {
     const [openModal, setOpenModal] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
 
-    // ✅ load doctor detail
     useEffect(() => {
         const loadDoctor = async () => {
             try {
                 setLoadingDoctor(true);
-
-                // ✅ API already unwrap => returns object doctor
                 const doc = await getDoctorDetailApi(id);
-
                 setDoctor(doc);
             } catch (e) {
                 console.error(e);
@@ -82,7 +78,6 @@ export default function DoctorDetailPage() {
         return doctor.user?.avatar_url || "/doctor-default.png";
     }, [doctor]);
 
-    // ✅ load slots by date
     const loadSlots = async () => {
         if (!date) {
             showToast("Vui lòng chọn ngày khám trước", "info", 2500);
@@ -93,7 +88,6 @@ export default function DoctorDetailPage() {
             setLoadingSlots(true);
             setSuggestDate(null);
 
-            // ✅ API already unwrap => returns array
             const list = await getDoctorSlotsApi({ doctorId: id, date });
 
             const available = (Array.isArray(list) ? list : []).filter(
@@ -155,7 +149,7 @@ export default function DoctorDetailPage() {
         try {
             setBooking(true);
 
-            await bookAppointmentApi({
+            await createAppointmentApi({
                 doctor_id: Number(id),
                 slot_id: selectedSlot.id,
                 type: "offline",
