@@ -7,6 +7,8 @@ export default function Navbar() {
     const token = localStorage.getItem("token");
     const { user, setUser } = useAuth();
 
+    const isAdmin = String(user?.role?.name || "").toLowerCase() === "admin";
+
     const logout = () => {
         localStorage.removeItem("token");
         setUser(null);
@@ -25,7 +27,12 @@ export default function Navbar() {
                 </div>
 
                 <nav className="navbar__nav">
-                    <NavLink to="/" className={({ isActive }) => (isActive ? "navitem navitem--active" : "navitem")}>
+                    <NavLink
+                        to="/"
+                        className={({ isActive }) =>
+                            isActive ? "navitem navitem--active" : "navitem"
+                        }
+                    >
                         Home
                     </NavLink>
 
@@ -33,9 +40,25 @@ export default function Navbar() {
                         Services
                     </NavLink>
 
-                    <NavLink to="/appointments" className={({ isActive }) => (isActive ? "navitem navitem--active" : "navitem")}>
+                    <NavLink
+                        to="/appointments"
+                        className={({ isActive }) =>
+                            isActive ? "navitem navitem--active" : "navitem"
+                        }
+                    >
                         Appointments
                     </NavLink>
+
+                    {token && isAdmin && (
+                        <NavLink
+                            to="/admin"
+                            className={({ isActive }) =>
+                                isActive ? "navitem navitem--active" : "navitem"
+                            }
+                        >
+                            Admin
+                        </NavLink>
+                    )}
                 </nav>
 
                 <div className="navbar__right">
@@ -51,9 +74,15 @@ export default function Navbar() {
                     </div>
 
                     {!token ? (
-                        <NavLink to="/login" className="btnnav btnnav--primary">
-                            Login
-                        </NavLink>
+                        <>
+                            <NavLink to="/register" className="btnnav btnnav--ghost">
+                                Register
+                            </NavLink>
+
+                            <NavLink to="/login" className="btnnav btnnav--primary">
+                                Login
+                            </NavLink>
+                        </>
                     ) : (
                         <button className="btnnav btnnav--danger" onClick={logout}>
                             Logout
