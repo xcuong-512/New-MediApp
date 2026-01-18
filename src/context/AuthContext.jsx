@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { meApi } from "../api/auth.api";
+import axios from "axios";
 
 const AuthContext = createContext(null);
 
@@ -18,10 +19,8 @@ export function AuthProvider({ children }) {
         try {
             setLoadingUser(true);
             const res = await meApi();
-            // ApiResponse format {success, data}
             setUser(res.data || null);
         } catch (e) {
-            // token invalid -> logout
             localStorage.removeItem("token");
             setUser(null);
         } finally {
@@ -43,3 +42,6 @@ export function AuthProvider({ children }) {
 export function useAuth() {
     return useContext(AuthContext);
 }
+
+
+

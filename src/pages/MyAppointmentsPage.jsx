@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     myAppointmentsApi,
@@ -9,16 +9,6 @@ export default function MyAppointmentsPage() {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [cancelLoadingId, setCancelLoadingId] = useState(null);
-
-    const paidDepositIds = useMemo(() => {
-        try {
-            const raw = localStorage.getItem("paid_deposits");
-            const parsed = raw ? JSON.parse(raw) : [];
-            return Array.isArray(parsed) ? parsed : [];
-        } catch {
-            return [];
-        }
-    }, []);
 
     const fetchData = async () => {
         try {
@@ -85,12 +75,9 @@ export default function MyAppointmentsPage() {
             ) : (
                 <div style={{ display: "grid", gap: 14 }}>
                     {appointments.map((a) => {
-                        const isDepositPaidDemo = paidDepositIds.includes(String(a.id));
-
-                        const uiStatus = isDepositPaidDemo ? "deposit_paid" : a.status;
-
+                        const uiStatus = a.status;
                         const showPayBtn = uiStatus === "pending";
-                        const showCancelBtn = canCancel(a.status);
+                        const showCancelBtn = canCancel(uiStatus);
 
                         return (
                             <div
@@ -119,8 +106,17 @@ export default function MyAppointmentsPage() {
                                             padding: "6px 10px",
                                             borderRadius: 999,
                                             background:
-                                                uiStatus === "deposit_paid" ? "#e7fff1" : "#fff7e6",
-                                            color: uiStatus === "deposit_paid" ? "#0a7a43" : "#b05b00",
+                                                uiStatus === "deposit_paid"
+                                                    ? "#e7fff1"
+                                                    : uiStatus === "pending"
+                                                        ? "#fff7e6"
+                                                        : "#eef2ff",
+                                            color:
+                                                uiStatus === "deposit_paid"
+                                                    ? "#0a7a43"
+                                                    : uiStatus === "pending"
+                                                        ? "#b05b00"
+                                                        : "#3730a3",
                                         }}
                                     >
                                         {uiStatus}

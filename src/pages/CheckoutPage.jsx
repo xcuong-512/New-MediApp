@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import "../styles/Checkoutpage.css";
-import { myAppointmentsApi } from "../api/appointments.api";
+import { myAppointmentsApi, payDepositApi } from "../api/appointments.api";
 
 function formatMoney(vnd) {
     const n = Number(vnd);
@@ -32,7 +32,7 @@ export default function CheckoutPage() {
     const [paidSuccess, setPaidSuccess] = useState(false);
     const [countdown, setCountdown] = useState(5);
 
-    const depositPercent = 0.2; // ✅ 20%
+    const depositPercent = 0.2;
 
     const isCardFormValid =
         cardName.trim().length >= 2 &&
@@ -61,7 +61,6 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         fetchAppt();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     useEffect(() => {
@@ -83,7 +82,6 @@ export default function CheckoutPage() {
         };
     }, [paidSuccess, navigate]);
 
-    // ✅ support both old/new backend shapes
     const doctorName =
         apptInfo?.doctor?.user?.name ||
         apptInfo?.doctor_profile?.user?.name ||
@@ -121,40 +119,26 @@ export default function CheckoutPage() {
 
             if (method === "card" && !isCardFormValid) return;
 
+            if (loadingPay) return;
+
             setLoadingPay(true);
 
-            // ✅ demo processing delay
             await new Promise((r) => setTimeout(r, 900));
 
-            // ✅ mark deposit paid (demo) in localStorage
-            const key = "paid_deposits";
-            let paid = [];
+            const res = await payDepositApi(apptInfo.id);
 
-            try {
-                const raw = localStorage.getItem(key);
-                const parsed = raw ? JSON.parse(raw) : [];
-                paid = Array.isArray(parsed) ? parsed : [];
-            } catch {
-                paid = [];
-            }
-
-            const apptId = String(apptInfo.id);
-
-            if (!paid.includes(apptId)) {
-                paid.push(apptId);
-                localStorage.setItem(key, JSON.stringify(paid));
-            }
+            const updatedAppt = res?.data || null;
+            if (updatedAppt) setApptInfo(updatedAppt);
 
             setPaidSuccess(true);
         } catch (err) {
-            console.error("Demo payment error:", err);
-            alert("Payment demo failed. Please try again.");
+            console.error("Payment error:", err);
+            alert(err?.response?.data?.message || "Payment failed. Please try again.");
         } finally {
             setLoadingPay(false);
         }
     };
 
-    // loading appointment
     if (loadingAppt) {
         return (
             <div className="checkoutWrap">
@@ -163,7 +147,6 @@ export default function CheckoutPage() {
         );
     }
 
-    // missing appointment
     if (!apptInfo) {
         return (
             <div className="checkoutWrap">
@@ -174,7 +157,6 @@ export default function CheckoutPage() {
         );
     }
 
-    // ✅ success screen
     if (paidSuccess) {
         return (
             <div className="checkoutWrap">
@@ -216,7 +198,6 @@ export default function CheckoutPage() {
         );
     }
 
-    // checkout page
     return (
         <div className="checkoutWrap">
             <div className="checkoutHeader">
@@ -347,7 +328,7 @@ export default function CheckoutPage() {
                     </button>
 
                     <div className="demoNote">
-                        * Đây là demo thanh toán (không ghi vào database).
+                        * Đây là demo thanh toán (nhưng status sẽ cập nhật DB).
                     </div>
                 </div>
 

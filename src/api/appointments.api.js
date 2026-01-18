@@ -18,3 +18,8 @@ export async function cancelAppointmentApi(id) {
     const res = await api.patch(`/appointments/${id}/cancel`);
     return res.data;
 }
+
+export async function payDepositApi(id) {
+    const res = await api.patch(`/appointments/${id}/deposit`);
+    return res.data;
+}
